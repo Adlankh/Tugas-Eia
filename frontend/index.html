@@ -9,7 +9,19 @@
 <body>
     <div class="container">
         <h1>Manajemen Pengguna</h1>
-        <form id="userForm">
+        <div id="loginSection">
+            <h2>Login Admin</h2>
+            <form id="loginForm">
+                <label for="loginEmail">Email:</label>
+                <input type="email" id="loginEmail" required>
+                <label for="loginPassword">Password:</label>
+                <input type="password" id="loginPassword" required>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+        <div id="managementSection" style="display:none;">
+            <button id="logoutBtn">Logout</button>
+            <form id="userForm">
             <input type="hidden" id="userId">
             <label for="nama">Nama:</label>
             <input type="text" id="nama" required>
@@ -38,7 +50,8 @@
                 </tr>
             </thead>
             <tbody></tbody>
-        </table>
+            </table>
+        </div>
     </div>
     <script src="script.js"></script>
 </body>

@@ -1,12 +1,44 @@
 const API_BASE = 'http://localhost:5001';
+const loginForm = document.getElementById('loginForm');
 const userForm = document.getElementById('userForm');
 const userTable = document.getElementById('userTable').querySelector('tbody');
 const cancelBtn = document.getElementById('cancelBtn');
+const loginSection = document.getElementById('loginSection');
+const managementSection = document.getElementById('managementSection');
+const logoutBtn = document.getElementById('logoutBtn');
+
+function checkAuth() {
+    fetch(`${API_BASE}/check-auth`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.authenticated) {
+                loginSection.style.display = 'none';
+                managementSection.style.display = 'block';
+                loadUsers();
+            } else {
+                loginSection.style.display = 'block';
+                managementSection.style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error checking auth:', error);
+            loginSection.style.display = 'block';
+            managementSection.style.display = 'none';
+        });
+}
 
 function loadUsers() {
     fetch(`${API_BASE}/users`)
-        .then(response => response.json())
+        .then(response => {
+            if (response.status === 401) {
+                alert('Sesi login telah berakhir. Silakan login kembali.');
+                checkAuth();
+                return;
+            }
+            return response.json();
+        })
         .then(data => {
+            if (!data) return;
             userTable.innerHTML = '';
             data.data.forEach(user => {
                 const row = document.createElement('tr');
@@ -28,8 +60,16 @@ function loadUsers() {
 
 function editUser(id) {
     fetch(`${API_BASE}/users/${id}`)
-        .then(response => response.json())
+        .then(response => {
+            if (response.status === 401) {
+                alert('Sesi login telah berakhir. Silakan login kembali.');
+                checkAuth();
+                return;
+            }
+            return response.json();
+        })
         .then(data => {
+            if (!data) return;
             const user = data.data;
             document.getElementById('userId').value = user.id;
             document.getElementById('nama').value = user.nama;
@@ -44,14 +84,54 @@ function editUser(id) {
 function deleteUser(id) {
     if (confirm('Apakah Anda yakin ingin menghapus pengguna ini?')) {
         fetch(`${API_BASE}/users/${id}`, { method: 'DELETE' })
-            .then(response => response.json())
+            .then(response => {
+                if (response.status === 401) {
+                    alert('Sesi login telah berakhir. Silakan login kembali.');
+                    checkAuth();
+                    return;
+                }
+                return response.json();
+            })
             .then(data => {
+                if (!data) return;
                 alert(data.pesan);
                 loadUsers();
             })
             .catch(error => console.error('Error:', error));
     }
 }
+
+loginForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const loginData = {
+        email: document.getElementById('loginEmail').value,
+        password: document.getElementById('loginPassword').value
+    };
+
+    fetch(`${API_BASE}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loginData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.pesan);
+        if (data.pesan === 'Login berhasil') {
+            checkAuth();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+});
+
+logoutBtn.addEventListener('click', function() {
+    fetch(`${API_BASE}/logout`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.pesan);
+            checkAuth();
+        })
+        .catch(error => console.error('Error:', error));
+});
 
 userForm.addEventListener('submit', function(e) {
     e.preventDefault();
@@ -71,8 +151,16 @@ userForm.addEventListener('submit', function(e) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData)
     })
-    .then(response => response.json())
+    .then(response => {
+        if (response.status === 401) {
+            alert('Sesi login telah berakhir. Silakan login kembali.');
+            checkAuth();
+            return;
+        }
+        return response.json();
+    })
     .then(data => {
+        if (!data) return;
         alert(data.pesan);
         userForm.reset();
         document.getElementById('userId').value = '';
@@ -88,5 +176,5 @@ cancelBtn.addEventListener('click', function() {
     cancelBtn.style.display = 'none';
 });
 
-// Load users on page load
-loadUsers();
+// Check auth on page load
+checkAuth();

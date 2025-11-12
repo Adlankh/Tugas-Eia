@@ -1,8 +1,9 @@
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
 
 db = SQLAlchemy()
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     nama = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
@@ -16,3 +17,6 @@ class User(db.Model):
             'email': self.email,
             'tipe_pengguna': self.tipe_pengguna
         }
+
+    def is_admin(self):
+        return self.tipe_pengguna == 'admin'

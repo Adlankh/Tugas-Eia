@@ -9,12 +9,14 @@ Aplikasi layanan pengguna full-stack yang dibangun dengan Flask (backend) dan HT
   - Model pengguna dengan atribut: nama, email, tipe_pengguna (customer, driver, admin), password (di-hash).
   - Database SQLite untuk penyimpanan data.
   - Validasi input dan hashing password menggunakan SHA-256.
+  - **Autentikasi dan Otorisasi**: Login/logout untuk admin, sesi berbasis Flask-Login, endpoint CRUD dilindungi hanya untuk admin.
 
 - **Frontend (HTML/CSS/JS)**:
-  - Antarmuka web untuk manajemen pengguna.
-  - Formulir untuk membuat dan mengedit pengguna.
-  - Tabel untuk menampilkan daftar pengguna.
-  - Interaksi dengan API backend menggunakan Fetch API.
+  - Antarmuka web untuk manajemen pengguna dengan autentikasi.
+  - Formulir login untuk admin.
+  - Formulir untuk membuat dan mengedit pengguna (hanya setelah login).
+  - Tabel untuk menampilkan daftar pengguna (hanya setelah login).
+  - Interaksi dengan API backend menggunakan Fetch API, dengan penanganan sesi login.
 
 ## Struktur Proyek
 
@@ -60,26 +62,31 @@ user-service/
 
 ### Endpoint API
 
-- `GET /users` - Ambil semua pengguna
-- `POST /users` - Buat pengguna baru
-- `GET /users/<id>` - Ambil pengguna berdasarkan ID
-- `PUT /users/<id>` - Perbarui pengguna berdasarkan ID
-- `DELETE /users/<id>` - Hapus pengguna berdasarkan ID
+- `POST /login` - Login admin (memerlukan email dan password)
+- `POST /logout` - Logout admin
+- `GET /check-auth` - Periksa status autentikasi
+- `GET /users` - Ambil semua pengguna (hanya admin)
+- `POST /users` - Buat pengguna baru (hanya admin)
+- `GET /users/<id>` - Ambil pengguna berdasarkan ID (hanya admin)
+- `PUT /users/<id>` - Perbarui pengguna berdasarkan ID (hanya admin)
+- `DELETE /users/<id>` - Hapus pengguna berdasarkan ID (hanya admin)
 
 ## Penggunaan
 
 1. Buka halaman frontend di browser.
-2. Gunakan formulir untuk menambah pengguna baru.
-3. Klik tombol "Edit" di tabel untuk mengedit pengguna.
-4. Klik tombol "Hapus" untuk menghapus pengguna.
-5. Data akan disimpan di database SQLite (`users.db` di folder backend).
+2. Login sebagai admin menggunakan email dan password admin yang ada di database.
+3. Setelah login, gunakan formulir untuk menambah pengguna baru.
+4. Klik tombol "Edit" di tabel untuk mengedit pengguna.
+5. Klik tombol "Hapus" untuk menghapus pengguna.
+6. Klik "Logout" untuk keluar dari sesi admin.
+7. Data akan disimpan di database SQLite (`users.db` di folder backend).
 
 ## Teknologi yang Digunakan
 
-- **Backend:** Flask, Flask-SQLAlchemy, Flask-CORS
+- **Backend:** Flask, Flask-SQLAlchemy, Flask-CORS, Flask-Login
 - **Frontend:** HTML5, CSS3, JavaScript (ES6)
 - **Database:** SQLite
-- **Keamanan:** Hashing password dengan SHA-256
+- **Keamanan:** Hashing password dengan SHA-256, autentikasi sesi
 
 ## Lisensi
 
