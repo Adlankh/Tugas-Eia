@@ -21,6 +21,14 @@ def load_user(user_id):
 
 with app.app_context():
     db.create_all()
+    # Create initial admin user if not exists
+    admin = User.query.filter_by(email='admin@example.com').first()
+    if not admin:
+        hashed_pw = hash_password('admin123')
+        admin = User(nama='Admin', email='admin@example.com', tipe_pengguna='admin', password=hashed_pw)
+        db.session.add(admin)
+        db.session.commit()
+        print("Initial admin user created: admin@example.com / admin123")
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()

@@ -11,14 +11,15 @@
 - [x] Install dependensi backend
 - [x] Jalankan backend server
 - [x] Test frontend dan integrasi (verified: page loads, fetches users from backend, form ready for CRUD operations)
-- [ ] Tambahkan autentikasi dan otorisasi
-  - [ ] Update requirements.txt (tambah flask-login)
-  - [ ] Update models.py (extend User dengan Flask-Login mixins)
-  - [ ] Buat backend/auth.py (untuk decorator dan utilitas auth)
-  - [ ] Update app.py (tambah endpoint login/logout, lindungi route CRUD dengan decorator)
-  - [ ] Update frontend/index.html (tambah form login, tampilan kondisional)
-  - [ ] Update frontend/script.js (tambah logika login, cek auth, lindungi fungsi CRUD)
-  - [ ] Update frontend/style.css (styling untuk form login jika perlu)
-  - [ ] Update README.md (dokumentasi autentikasi)
-  - [ ] Install dependensi baru dan restart server
-  - [ ] Test autentikasi (login sebagai admin, akses CRUD, logout)
+- [x] Tambahkan autentikasi dan otorisasi
+  - [x] Update requirements.txt (tambah flask-login)
+  - [x] Update models.py (extend User dengan Flask-Login mixins)
+  - [x] Buat backend/auth.py (untuk decorator dan utilitas auth)
+  - [x] Update app.py (tambah endpoint login/logout, lindungi route CRUD dengan decorator)
+  - [x] Update frontend/index.html (tambah form login, tampilan kondisional)
+  - [x] Update frontend/script.js (tambah logika login, cek auth, lindungi fungsi CRUD)
+  - [x] Update frontend/style.css (styling untuk form login jika perlu)
+  - [x] Update README.md (dokumentasi autentikasi)
+  - [x] Install dependensi baru dan restart server
+  - [x] Test autentikasi (login sebagai admin, akses CRUD, logout)
+  - [x] Tambahkan user admin default (admin@example.com / admin123)
