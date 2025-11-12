@@ -1,123 +1,95 @@
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from flask_login import LoginManager, login_user, logout_user, login_required
-from models import db, User
-from auth import admin_required, login_required_json
-import hashlib
+from flask_sqlalchemy import SQLAlchemy
+import os
 
-app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  # Mengizinkan CORS untuk semua origins
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'your-secret-key-here'  # Ganti dengan kunci rahasia yang aman
-db.init_app(app)
+# === Konfigurasi Flask ===
+app = Flask(__name__, static_folder="../frontend", static_url_path="")
+CORS(app, resources={r"/*": {"origins": "*"}})
 
-login_manager = LoginManager()
-login_manager.init_app(app)
+# === Konfigurasi Database SQLite ===
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+# === Model Tabel User ===
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nama = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    tipe_pengguna = db.Column(db.String(50), nullable=False)
+    password = db.Column(db.String(100), nullable=False)
 
+# === Buat database (jika belum ada) ===
 with app.app_context():
     db.create_all()
-    # Create initial admin user if not exists
-    admin = User.query.filter_by(email='admin@example.com').first()
-    if not admin:
-        hashed_pw = hash_password('admin123')
-        admin = User(nama='Admin', email='admin@example.com', tipe_pengguna='admin', password=hashed_pw)
-        db.session.add(admin)
-        db.session.commit()
-        print("Initial admin user created: admin@example.com / admin123")
 
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
-
-@app.route('/login', methods=['POST'])
-def login():
-    data = request.get_json()
-    if not data or not all(k in data for k in ('email', 'password')):
-        return jsonify({'pesan': 'Email dan password diperlukan'}), 400
-    user = User.query.filter_by(email=data['email']).first()
-    if user and user.password == hash_password(data['password']) and user.is_admin():
-        login_user(user)
-        return jsonify({'pesan': 'Login berhasil', 'user': user.to_dict()}), 200
-    return jsonify({'pesan': 'Email, password salah, atau bukan admin'}), 401
-
-@app.route('/logout', methods=['POST'])
-@login_required
-def logout():
-    logout_user()
-    return jsonify({'pesan': 'Logout berhasil'}), 200
-
-@app.route('/check-auth', methods=['GET'])
-def check_auth():
-    if 'user_id' in session:
-        user = User.query.get(session['user_id'])
-        if user and user.is_admin():
-            return jsonify({'authenticated': True, 'user': user.to_dict()}), 200
-    return jsonify({'authenticated': False}), 401
-
-@app.route('/users', methods=['GET'])
-@login_required
-@admin_required
+# === ROUTE GET SEMUA USER ===
+@app.route("/api/users", methods=["GET"])
 def get_users():
     users = User.query.all()
-    return jsonify({'pesan': 'Daftar pengguna berhasil diambil', 'data': [user.to_dict() for user in users]})
+    data = [
+        {
+            "id": u.id,
+            "nama": u.nama,
+            "email": u.email,
+            "tipe_pengguna": u.tipe_pengguna,
+        }
+        for u in users
+    ]
+    return jsonify(data), 200
 
-@app.route('/users', methods=['POST'])
-@login_required
-@admin_required
+# === ROUTE TAMBAH USER ===
+@app.route("/api/users", methods=["POST"])
 def create_user():
     data = request.get_json()
-    if not data or not all(k in data for k in ('nama', 'email', 'tipe_pengguna', 'password')):
-        return jsonify({'pesan': 'Data tidak lengkap'}), 400
-    if data['tipe_pengguna'] not in ['customer', 'driver', 'admin']:
-        return jsonify({'pesan': 'Tipe pengguna tidak valid'}), 400
-    hashed_pw = hash_password(data['password'])
-    new_user = User(nama=data['nama'], email=data['email'], tipe_pengguna=data['tipe_pengguna'], password=hashed_pw)
+    if not all(k in data for k in ("nama", "email", "password", "tipe_pengguna")):
+        return jsonify({"pesan": "Data tidak lengkap"}), 400
+
+    if User.query.filter_by(email=data["email"]).first():
+        return jsonify({"pesan": "Email sudah terdaftar"}), 400
+
+    new_user = User(
+        nama=data["nama"],
+        email=data["email"],
+        password=data["password"],
+        tipe_pengguna=data["tipe_pengguna"],
+    )
     db.session.add(new_user)
     db.session.commit()
-    return jsonify({'pesan': 'Pengguna berhasil dibuat', 'data': new_user.to_dict()}), 201
+    return jsonify({"pesan": "Pengguna berhasil disimpan"}), 201
 
-@app.route('/users/<int:user_id>', methods=['GET'])
-@login_required
-@admin_required
-def get_user(user_id):
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({'pesan': 'Pengguna tidak ditemukan'}), 404
-    return jsonify({'pesan': 'Detail pengguna berhasil diambil', 'data': user.to_dict()})
-
-@app.route('/users/<int:user_id>', methods=['PUT'])
-@login_required
-@admin_required
+# === ROUTE UPDATE USER ===
+@app.route("/api/users/<int:user_id>", methods=["PUT"])
 def update_user(user_id):
+    data = request.get_json()
     user = User.query.get(user_id)
     if not user:
-        return jsonify({'pesan': 'Pengguna tidak ditemukan'}), 404
-    data = request.get_json()
-    if 'nama' in data:
-        user.nama = data['nama']
-    if 'email' in data:
-        user.email = data['email']
-    if 'tipe_pengguna' in data and data['tipe_pengguna'] in ['customer', 'driver', 'admin']:
-        user.tipe_pengguna = data['tipe_pengguna']
-    if 'password' in data:
-        user.password = hash_password(data['password'])
-    db.session.commit()
-    return jsonify({'pesan': 'Pengguna berhasil diperbarui', 'data': user.to_dict()})
+        return jsonify({"pesan": "Pengguna tidak ditemukan"}), 404
 
-@app.route('/users/<int:user_id>', methods=['DELETE'])
-@login_required
-@admin_required
+    user.nama = data.get("nama", user.nama)
+    user.email = data.get("email", user.email)
+    user.tipe_pengguna = data.get("tipe_pengguna", user.tipe_pengguna)
+    user.password = data.get("password", user.password)
+    db.session.commit()
+
+    return jsonify({"pesan": "Data pengguna diperbarui"}), 200
+
+# === ROUTE HAPUS USER ===
+@app.route("/api/users/<int:user_id>", methods=["DELETE"])
 def delete_user(user_id):
     user = User.query.get(user_id)
     if not user:
-        return jsonify({'pesan': 'Pengguna tidak ditemukan'}), 404
+        return jsonify({"pesan": "Pengguna tidak ditemukan"}), 404
     db.session.delete(user)
     db.session.commit()
-    return jsonify({'pesan': 'Pengguna berhasil dihapus'})
+    return jsonify({"pesan": "Pengguna berhasil dihapus"}), 200
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# === ROUTE UNTUK FRONTEND ===
+@app.route("/")
+def serve_index():
+    return send_from_directory(app.static_folder, "index.html")
+
+# === Jalankan server ===
+if __name__ == "__main__":
+    app.run(debug=True, port=5001)
