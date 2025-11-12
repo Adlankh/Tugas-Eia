@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Service - Manajemen Pengguna</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Manajemen Pengguna</h1>
+        <form id="userForm">
+            <input type="hidden" id="userId">
+            <label for="nama">Nama:</label>
+            <input type="text" id="nama" required>
+            <label for="email">Email:</label>
+            <input type="email" id="email" required>
+            <label for="tipePengguna">Tipe Pengguna:</label>
+            <select id="tipePengguna" required>
+                <option value="customer">Customer</option>
+                <option value="driver">Driver</option>
+                <option value="admin">Admin</option>
+            </select>
+            <label for="password">Password:</label>
+            <input type="password" id="password" required>
+            <button type="submit">Simpan</button>
+            <button type="button" id="cancelBtn" style="display:none;">Batal</button>
+        </form>
+        <h2>Daftar Pengguna</h2>
+        <table id="userTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nama</th>
+                    <th>Email</th>
+                    <th>Tipe Pengguna</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
